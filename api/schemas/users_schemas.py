@@ -1,6 +1,6 @@
 
 # third party import
-from marshmallow import post_load
+from marshmallow import post_load, validates, ValidationError
 
 # custom import
 from api.extensions import ma
@@ -16,6 +16,14 @@ class UserEntrySchema(ma.SQLAlchemySchema):
     first_name = ma.auto_field(required=True)
     password = ma.String(required=True)
     email = ma.auto_field(required=True)
+
+    @validates("password")
+    def validate_password(self, value):
+        pass_len = len(value)
+        if pass_len < 6:
+            raise ValidationError("Password must be greater than 6.")
+        if pass_len > 30:
+            raise ValidationError("Password must not be greater than 30.")
 
     @post_load
     def create_user(self, data, **kwargs):
@@ -54,4 +62,19 @@ class UpdateUserSchema(ma.SQLAlchemySchema):
     class Meta:
         model = Users
 
-    
+    id = ma.auto_field(dump_only=True)
+    first_name = ma.auto_field(dump_only=True)
+    last_name = ma.auto_field(dump_only=True)
+    email = ma.auto_field(dump_only=True)
+    username = ma.auto_field(dump_only=True)
+
+    @validates("username")
+    def validate_username(self, value):
+        """Validate the username and check if it is not being use."""
+        if not value[0].isalpha():
+            raise ValidationError("User name must start with a letter.")
+
+        user = Users.query.filter_by(username=value).first()
+        if user:
+            raise ValidationError('Use a different username.')
+
