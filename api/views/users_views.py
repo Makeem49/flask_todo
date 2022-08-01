@@ -65,7 +65,6 @@ def update(id):
 @users.route('/delete_my_account/<id>', methods=['DELETE'])
 def delete_account(id):
     user = Users.query.filter_by(id=id).first()
-    print(user)
     if user:
         db.session.delete(user)
         db.session.commit()
