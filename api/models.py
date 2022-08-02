@@ -41,7 +41,11 @@ class Users(db.Model, CommonAttribute):
     created_at = db.Column(db.DateTime, nullable=False,
                            default=datetime.utcnow)
     last_seen = db.Column(db.DateTime, nullable=False,
-                          default=datetime.utcnow,)
+                          default=datetime.utcnow)
+
+    # relationship
+    todos = db.relationship('ToDo', back_populates='user',
+                            lazy='dynamic', cascade='all, delete-orphan')
 
     @property
     def password():
@@ -81,9 +85,16 @@ class ToDo(db.Model, CommonAttribute):
     completed_at = db.Column(db.DateTime, nullable=True)
     is_suspended = db.Column(db.Boolean, nullable=False, default=False)
     is_completed = db.Column(db.Boolean, nullable=True, default=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    # relationship 
+    user = db.relationship("Users", back_populates="todos")
 
     def start(self):
         """Method to start the task"""
+        if self.is_suspended == True:
+            self.is_suspended = False
+
         self.start_at = datetime.utcnow()
 
         db.session.commit()
