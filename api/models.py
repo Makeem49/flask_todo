@@ -26,6 +26,11 @@ class CommonAttribute:
         db.session.commit()
 
 
+# class Token(db.Model):
+#     """Token model"""
+#     __tablename__ = 'tokens'
+
+
 class Users(db.Model, CommonAttribute):
     """User model"""
     __tablename__ = 'users'
@@ -87,7 +92,7 @@ class ToDo(db.Model, CommonAttribute):
     is_completed = db.Column(db.Boolean, nullable=True, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    # relationship 
+    # relationship
     user = db.relationship("Users", back_populates="todos")
 
     def start(self):
