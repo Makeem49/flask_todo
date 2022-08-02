@@ -1,7 +1,8 @@
 # standard import
 from email.policy import default
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
+import secrets
 
 # third import
 from sqlalchemy.dialects.postgresql import UUID
@@ -26,9 +27,38 @@ class CommonAttribute:
         db.session.commit()
 
 
-# class Token(db.Model):
-#     """Token model"""
-#     __tablename__ = 'tokens'
+class Token(db.Model, CommonAttribute):
+    """Token model"""
+    __tablename__ = 'tokens'
+
+    id = db.Column(db.Integer, primary_key=True)
+    access_token = db.Column(db.String(256), nullable=False)
+    refresh_token = db.Column(db.String(256), nullable=False)
+    access_exp = db.Column(db.String(256), nullable=False)
+    refresh_exp = db.Column(db.String(256), nullable=False)
+
+    def generate(self):
+        self.access_token = secrets.token_urlsafe()
+        self.refresh_token = secrets.token_urlsafe()
+        self.access_exp = datetime.utcnow() + timedelta(minutes=15)
+        self.refresh_exp = datetime.utcnow() + timedelta(days=15)
+
+    def expire(self):
+        self.access_exp = datetime.utcnow()
+        self.refresh_exp = datetime.utcnow()
+
+    @staticmethod
+    def clean():
+        """Remove any tokens that have been expired for more than a day"""
+        yesterday = datetime.utcnow() - timedelta(days=1)
+        tokens = db.session.query(Token).filter(
+            Token.refresh_exp < yesterday).all()
+        for token in tokens:
+            db.session.delete(token)
+        db.session.commit()
+
+    def __repr__(self) -> str:
+        return "Token created"
 
 
 class Users(db.Model, CommonAttribute):
@@ -51,6 +81,8 @@ class Users(db.Model, CommonAttribute):
     # relationship
     todos = db.relationship('ToDo', back_populates='user',
                             lazy='dynamic', cascade='all, delete-orphan')
+    tokens = db.relationship(Token, back_populates='user',
+                             lazy='select', cascade='all, delete-orphan')
 
     @property
     def password():
@@ -69,8 +101,52 @@ class Users(db.Model, CommonAttribute):
         """Update user last seen"""
         self.last_seen = datetime.utcnow()
 
+        db.session.commit()
+
     def is_active(self):
         return self.active
+
+    def generate_auth_token(self):
+        """Generate authentication token for user"""
+        token = Token(user=self)
+        token.generate()
+
+    @staticmethod
+    def verify_access_token(access_token):
+        """Method to verify token"""
+
+        token = Token.query.filter_by(access_token=access_token).first()
+        if token:
+            if token.access_exp > datetime.utcnow():
+                token.user.ping()
+                db.session.commit()
+                return token.user
+        else:
+            return None
+
+    @staticmethod
+    def verify_refresh_token(refresh_token, access_token):
+        """Method to verify refresh token"""
+
+        token = db.session.query(Token).filter_by(
+            refresh_token=refresh_token, access_token=access_token).first()
+
+        if token:
+            if token.refresh_exp > datetime.utcnow():
+                return token
+
+            # if any one tried to refresh a token with an expired on,
+            # the token for the that particular user should be revoke as
+            # a security measure.
+            token.user.revoke_all()
+            db.session.commit()
+
+    def revoke_all(self):
+        """Revoke all token"""
+        tokens = db.session.query(Token).filter(Token.user == self).all()
+        for token in tokens:
+            db.session.delete(token)
+        db.session.commit()
 
     def __repr__(self) -> str:
         return f"User {self.first_name}"
