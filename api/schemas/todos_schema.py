@@ -27,7 +27,7 @@ class TodoResponseSchema(ma.SQLAlchemySchema):
     class Meta:
         model = ToDo
 
-    user = ma.Hyperlinks(
+    todo = ma.Hyperlinks(
         {"self": ma.URLFor(
             'todos.details', values=dict(id='<id>'))}
     )
@@ -56,3 +56,13 @@ class TodoUpdateSchema(ma.SQLAlchemySchema):
 
     name = ma.auto_field(required=True)
     target_time = ma.auto_field(required=True)
+
+
+class TodoArguments(ma.SQLAlchemySchema):
+    """Todo arguments schema"""
+
+    class Meta:
+        order = True 
+
+    page = ma.Integer(requored=True)
+    per_page = ma.Integer(requored=True)

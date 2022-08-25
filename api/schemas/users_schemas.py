@@ -25,9 +25,6 @@ class UserEntrySchema(ma.SQLAlchemySchema):
         if pass_len > 30:
             raise ValidationError("Password must not be greater than 30.")
 
-    @post_load
-    def create_user(self, data, **kwargs):
-        return Users(**data)
 
 
 class UserResponseSchema(ma.SQLAlchemySchema):
@@ -78,3 +75,12 @@ class UpdateUserSchema(ma.SQLAlchemySchema):
         if user:
             raise ValidationError('Use a different username.')
 
+
+class UserArguments(ma.SQLAlchemySchema):
+    """Todo arguments schema"""
+
+    class Meta:
+        order = True 
+
+    page = ma.Integer(requored=True)
+    per_page = ma.Integer(requored=True)
