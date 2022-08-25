@@ -1,14 +1,16 @@
-# standard import 
+# standard import
 import os
 
-# third party import 
+# third party import
 from flask import Flask, url_for, redirect
 
-# custom import 
+# custom import
 from api.errors import errors
 from api.views.users_views import users
 from api.views.todos_views import todos
-from api.extensions import apifairy, db, ma 
+from api.extensions import apifairy, db, ma
+from api.views.tokens import tokens
+
 
 def create_app(settings_override=None):
     """Create flask application instance"""
@@ -25,24 +27,20 @@ def create_app(settings_override=None):
     except:
         OSError
 
-    @app.route('/')
-    def hello():
-        return {'hello' : "wolrd"}
-
     @app.route('/doc')
     def index():  # pragma: no cover
         return redirect(url_for('apifairy.docs'))
 
-
-    # register bleuprint 
+    # register bleuprint
     app.register_blueprint(errors)
     app.register_blueprint(users)
     app.register_blueprint(todos)
+    app.register_blueprint(tokens)
 
     # initializing extensions
     extensions(app)
 
-    return app        
+    return app
 
 
 def extensions(app):
@@ -50,4 +48,3 @@ def extensions(app):
     apifairy.init_app(app)
     db.init_app(app)
     ma.init_app(app)
-
