@@ -36,6 +36,10 @@ class Token(db.Model, CommonAttribute):
     refresh_token = db.Column(db.String(256), nullable=False)
     access_exp = db.Column(db.String(256), nullable=False)
     refresh_exp = db.Column(db.String(256), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    # relationship
+    user = db.relationship('Users', back_populates='tokens')
 
     def generate(self):
         self.access_token = secrets.token_urlsafe()
