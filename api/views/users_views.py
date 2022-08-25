@@ -1,14 +1,18 @@
 # third party import
 from flask import Blueprint, jsonify, request
 from marshmallow import ValidationError
+from apifairy import authenticate, response, body, arguments
 
 # custom import
 from api.models import Users
 from api.extensions import db
 from api.schemas.users_schemas import (UserEntrySchema,
                                        UserResponseSchema,
-                                       UserProfileSchema
+                                       UserProfileSchema,
+                                       UserArguments
                                        )
+from ..decorators import paginated_response
+from api.auth import token_auth
 
 users = Blueprint('users', __name__, url_prefix='/api/v1.0')
 
@@ -17,27 +21,33 @@ user_entry_shema = UserEntrySchema()
 user_response_schema = UserResponseSchema()
 users_response_schema = UserResponseSchema(many=True)
 user_profile_schema = UserProfileSchema()
+user_args_schema = UserArguments()
 
 
-@users.route('/users', methods=['GET'])
-def get_users():
-    """Query all user"""
-    users = Users.query.all()
-    return jsonify({"users": users_response_schema.dump(users)})
+@users.route('/users/', methods=['GET'])
+@paginated_response('users')
+@arguments(user_args_schema)
+# @authenticate(token_auth)
+def get_users(args):
+    """Query all user
+
+    Retrieve all users in the database
+    """
+    return Users.query
 
 
 @users.route('/register', methods=['POST'])
-def create_user():
-    """Create a user"""
-    params = {**request.json}
-
-    try:
-        user = user_entry_shema.load(params)
-        user.save()
-    except ValidationError as err:
-        return jsonify({"error": err.messages}), 406
-
-    return user_response_schema.dump(user), 201
+@response(user_response_schema, 201)
+@body(user_entry_shema)
+def create_user(args):
+    """Create a user
+    
+    Add a new user to the database
+    """
+    user = Users(**args)
+    db.session.add(user)
+    db.session.commit()
+    return user
 
 
 @users.route('/profile/<id>', methods=['GET'])
@@ -52,6 +62,9 @@ def profile(id):
 
 
 @users.route('/update_details/<int:id>', methods=['PUT'])
+# # @authenticate(token_auth)
+# @body(user_profile_schema)
+# @response(user_profile_schema, 200)
 def update(id):
     """Update user details"""
     params = {**request.json}

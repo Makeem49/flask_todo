@@ -1,15 +1,18 @@
 # third party import
 from flask import Blueprint, request, jsonify
 from marshmallow import ValidationError
-from api.models import ToDo
+from apifairy import body, response, other_responses, authenticate, arguments
 
 # custom import
+from api.models import ToDo
 from api.schemas.todos_schema import (TodoEntrySchema,
                                       TodoStatusSchema,
                                       TodoResponseSchema,
-                                      TodoUpdateSchema
+                                      TodoUpdateSchema,
+                                      TodoArguments
                                       )
 from api.extensions import db
+from api.decorators import paginated_response
 
 todos = Blueprint('todos', __name__, url_prefix='/api/v1.0')
 
@@ -19,12 +22,16 @@ todo_status_schema = TodoStatusSchema()
 todo_response_schema = TodoResponseSchema()
 todos_response_schema = TodoResponseSchema(many=True)
 todo_update_schema = TodoUpdateSchema()
+todo_args_schema = TodoArguments()
 
 
-@todos.route('/todos', methods=['GET'])
-def get_todos():
-    todos = ToDo.query.all()
-    return jsonify({'todo': todos_response_schema.dump(todos)}), 200
+@todos.route('/todos/', methods=['GET'])
+@arguments(todo_args_schema)
+@paginated_response('todos')
+def get_todos(args):
+    """Get todos"""
+    todos = ToDo.query
+    return todos
 
 
 @todos.route('/add_todo', methods=['POST'])
@@ -100,7 +107,7 @@ def suspend(id):
     if todo and todo.is_completed == True:
         return jsonify({"status": "Task already completed, cannot be suspend."}), 200
     elif todo.is_suspended == True:
-        return jsonify({"status" : "Task already suspended"}), 200
+        return jsonify({"status": "Task already suspended"}), 200
     elif todo and todo.is_completed == False:
         todo.suspend()
         return jsonify({'status': 'suspended'}), 200
