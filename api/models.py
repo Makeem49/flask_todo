@@ -34,8 +34,8 @@ class Token(db.Model, CommonAttribute):
     id = db.Column(db.Integer, primary_key=True)
     access_token = db.Column(db.String(256), nullable=False)
     refresh_token = db.Column(db.String(256), nullable=False)
-    access_exp = db.Column(db.String(256), nullable=False)
-    refresh_exp = db.Column(db.String(256), nullable=False)
+    access_exp = db.Column(db.DateTime(), nullable=False)
+    refresh_exp = db.Column(db.DateTime(), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     # relationship
@@ -44,7 +44,7 @@ class Token(db.Model, CommonAttribute):
     def generate(self):
         self.access_token = secrets.token_urlsafe()
         self.refresh_token = secrets.token_urlsafe()
-        self.access_exp = datetime.utcnow() + timedelta(minutes=15)
+        self.access_exp = datetime.utcnow() + timedelta(hours=15)
         self.refresh_exp = datetime.utcnow() + timedelta(days=15)
 
     def expire(self):
@@ -86,7 +86,7 @@ class Users(db.Model, CommonAttribute):
     todos = db.relationship('ToDo', back_populates='user',
                             lazy='dynamic', cascade='all, delete-orphan')
     tokens = db.relationship(Token, back_populates='user',
-                             lazy='select', cascade='all, delete-orphan')
+                             lazy='dynamic', cascade='all, delete-orphan')
 
     @property
     def password():
@@ -114,6 +114,7 @@ class Users(db.Model, CommonAttribute):
         """Generate authentication token for user"""
         token = Token(user=self)
         token.generate()
+        return token
 
     @staticmethod
     def verify_access_token(access_token):
