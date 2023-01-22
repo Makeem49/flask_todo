@@ -26,7 +26,6 @@ class UserEntrySchema(ma.SQLAlchemySchema):
             raise ValidationError("Password must not be greater than 30.")
 
 
-
 class UserResponseSchema(ma.SQLAlchemySchema):
     """User response schema"""
     class Meta:
@@ -55,15 +54,14 @@ class UserProfileSchema(ma.SQLAlchemySchema):
 
 
 class UpdateUserSchema(ma.SQLAlchemySchema):
-    """Update schema""" 
+    """Update schema"""
     class Meta:
         model = Users
 
-    id = ma.auto_field(dump_only=True)
-    first_name = ma.auto_field(dump_only=True)
-    last_name = ma.auto_field(dump_only=True)
-    email = ma.auto_field(dump_only=True)
-    username = ma.auto_field(dump_only=True)
+    first_name = ma.auto_field(required=False)
+    last_name = ma.auto_field(required=False)
+    email = ma.auto_field(required=False)
+    username = ma.auto_field(required=False)
 
     @validates("username")
     def validate_username(self, value):
@@ -80,7 +78,11 @@ class UserArguments(ma.SQLAlchemySchema):
     """Todo arguments schema"""
 
     class Meta:
-        order = True 
+        order = True
 
-    page = ma.Integer(requored=True)
-    per_page = ma.Integer(requored=True)
+    page = ma.Integer(required=False)
+    per_page = ma.Integer(required=False)
+
+
+class EmptySchema(ma.Schema):
+    pass

@@ -15,11 +15,7 @@ class TodoEntrySchema(ma.SQLAlchemySchema):
         model = ToDo
 
     name = ma.auto_field(required=True)
-    target_time = ma.auto_field(required=True)
-
-    @post_load
-    def create_todo(self, data, **kwargs):
-        return ToDo(**data)
+    target_time = ma.auto_field(required=False)
 
 
 class TodoResponseSchema(ma.SQLAlchemySchema):
@@ -62,7 +58,7 @@ class TodoArguments(ma.SQLAlchemySchema):
     """Todo arguments schema"""
 
     class Meta:
-        order = True 
+        order = True
 
     page = ma.Integer(requored=True)
     per_page = ma.Integer(requored=True)
