@@ -5,10 +5,12 @@ from functools import wraps
 from flask import request, url_for
 
 # custom import
+from api.schemas.users_schema import UserResponseSchema
 from api.schemas.todos_schema import TodoResponseSchema
 from apifairy import response
 
-schema_response = TodoResponseSchema()
+user_response = UserResponseSchema()
+todo_response = TodoResponseSchema()
 
 
 def paginated_response(collections, max_limit=25):
@@ -18,8 +20,9 @@ def paginated_response(collections, max_limit=25):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            # nvoke the original function
+            # invoke the original function
             query_function = f(*args, **kwargs)
+            print(query_function)
 
             # obtain paginated arguments
             page = request.args.get('page', 1, type=int)
@@ -53,7 +56,10 @@ def paginated_response(collections, max_limit=25):
             pages['last_url'] = url_for(
                 request.endpoint, page=p.pages, per_page=per_page, _external=True)
 
-            result = [schema_response.dump(todo) for todo in p.items]
+            if collections == 'todos':
+                result = [todo_response.dump(todo) for todo in p.items]
+            else:
+                result = [user_response.dump(user) for user in p.items]
 
             return {collections: result, "pages": pages}
         return wrapper
