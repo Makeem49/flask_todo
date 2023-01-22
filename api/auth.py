@@ -17,7 +17,8 @@ def verify_password(email, password):
     if email and password:
         user = Users.query.filter_by(email=email).first(
         ) or Users.query.filter_by(username=email).first()
-        if user and user.verify_password(password):
+        print(user)
+        if user and user.check_password(password):
             return user
 
 
@@ -33,10 +34,10 @@ def basic_auth_error(status=401):
 
 @token_auth.verify_token
 def verify_token(access_token):
-    if current_app.config['DISABLE_AUTH']:
-        user = db.session.get(Users, 1)
-        user.ping()
-        return user
+    # if current_app.config.get('DISABLE_AUTH'):
+    #     user = db.session.get(Users, 1)
+    #     user.ping()
+    #     return user
 
     if access_token:
         return Users.verify_access_token(access_token)
