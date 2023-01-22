@@ -13,8 +13,9 @@ from api.schemas.todos_schema import (TodoEntrySchema,
                                       )
 from api.extensions import db
 from api.decorators import paginated_response
+from api.auth import token_auth
 
-todos = Blueprint('todos', __name__, url_prefix='/api/v1.0')
+todos = Blueprint('todos', __name__, url_prefix='/api/v1.0/todo')
 
 # schemas instance
 todo_entry_schema = TodoEntrySchema()
@@ -34,17 +35,23 @@ def get_todos(args):
     return todos
 
 
-@todos.route('/add_todo', methods=['POST'])
-def create_todo():
-    params = {**request.json}
-    print(params)
-    try:
-        todo = todo_entry_schema.load(params)
-        todo.save()
-    except ValidationError as err:
-        return jsonify({"error": err.messages}), 406
+@todos.route('/create', methods=['POST'])
+@response(todo_response_schema)
+@body(todo_entry_schema)
+@authenticate(token_auth)
+def create(args):
+    """
+    Create todo
 
-    return todo_response_schema.dump(todo), 201
+    This endpoint allow user to create todo. The target time represent the time the user 
+    wanted to use to accomplish the task. 
+    """
+    user = token_auth.current_user()
+    todo = ToDo(**args)
+    todo.user_id = user.id
+    db.session.add(todo)
+    db.session.commit()
+    return todo
 
 
 @todos.route('/todo_details/<id>', methods=["GET"])
@@ -52,7 +59,7 @@ def details(id):
     todo = ToDo.query.filter_by(id=id).first()
     if todo:
         return todo_status_schema.dump(todo), 200
-    return {}, 404
+    return {}, 204
 
 
 @todos.route('/update_todo/<id>', methods=['PUT'])

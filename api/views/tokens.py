@@ -141,7 +141,11 @@ def refresh_token(args):
 @body(user_update_email_schema)
 @response(EmptySchema, status_code=200, description='Users email update')
 def change_email(args):
-    """Change email address"""
+    """Change email address
+    
+    User can change their email address through this route. A new confirmation
+    token will be sent to the new email address to validate if the email is access an active or not. 
+    """
     email = args.get('email')
     user = basic_auth.current_user()
     token = user.generate_new_email_confirmation_token(email)
@@ -155,7 +159,9 @@ def change_email(args):
 def confirm_email_address(token):
     """Confirm user new email
 
-    Verify user new email address which the user intend to change to. If the email correct and active,  confirmed response will be returned. If the email or the link is tempered with, or expired, a 406 response with error will be returned. 
+    Verify user new email address which the user intend to change to. If the email correct and active,  
+    confirmed response will be returned. If the email or the link is tempered with, 
+    or expired, a 406 response with error will be returned. 
     """
     get_user = token_auth.current_user()
     user = get_user.confirm_new_email_token(token)
