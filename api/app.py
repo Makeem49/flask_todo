@@ -8,7 +8,7 @@ from flask import Flask, url_for, redirect
 from api.errors import errors
 from api.views.users_views import users
 from api.views.todos_views import todos
-from api.extensions import apifairy, db, ma
+from api.extensions import apifairy, db, ma, migrate
 from api.views.tokens import tokens
 
 
@@ -31,6 +31,10 @@ def create_app(settings_override=None):
     def index():  # pragma: no cover
         return redirect(url_for('apifairy.docs'))
 
+    @app.route('/')
+    def root():
+        return redirect(url_for('todos.get_todos'))
+
     # register bleuprint
     app.register_blueprint(errors)
     app.register_blueprint(users)
@@ -48,3 +52,4 @@ def extensions(app):
     apifairy.init_app(app)
     db.init_app(app)
     ma.init_app(app)
+    migrate.init_app(app, db)
