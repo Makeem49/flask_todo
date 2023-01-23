@@ -11,7 +11,7 @@ from api.schemas.users_schema import (UserEntrySchema,
                                       UserProfileSchema,
                                       UserArguments,
                                       UpdateUserSchema,
-                                      EmptySchema
+                                      EmptyResponseSchema
                                       )
 from ..decorators import paginated_response
 from api.auth import token_auth, basic_auth
@@ -86,7 +86,7 @@ def update(args, id):
 
 
 @users.route('/<id>', methods=['DELETE'])
-@response(EmptySchema)
+@response(EmptyResponseSchema)
 @authenticate(token_auth)
 def delete_account(id):
     """Delete user
