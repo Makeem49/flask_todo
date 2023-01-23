@@ -84,5 +84,5 @@ class UserArguments(ma.SQLAlchemySchema):
     per_page = ma.Integer(required=False)
 
 
-class EmptySchema(ma.Schema):
+class EmptyResponseSchema(ma.Schema):
     pass
