@@ -1,10 +1,10 @@
 # third party import
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, abort
 from marshmallow import ValidationError
 from apifairy import body, response, other_responses, authenticate, arguments
 
 # custom import
-from api.models import ToDo
+from api.models import ToDo, Users
 from api.schemas.todos_schema import (TodoEntrySchema,
                                       TodoStatusSchema,
                                       TodoResponseSchema,
@@ -15,7 +15,7 @@ from api.extensions import db
 from api.decorators import paginated_response
 from api.auth import token_auth
 
-todos = Blueprint('todos', __name__, url_prefix='/api/v1.0/todo')
+todos = Blueprint('todos', __name__, url_prefix='/api/v1.0/todos')
 
 # schemas instance
 todo_entry_schema = TodoEntrySchema()
@@ -26,7 +26,7 @@ todo_update_schema = TodoUpdateSchema()
 todo_args_schema = TodoArguments()
 
 
-@todos.route('/todos/', methods=['GET'])
+@todos.route('/', methods=['GET'])
 @arguments(todo_args_schema)
 @paginated_response('todos')
 def get_todos(args):
@@ -35,7 +35,7 @@ def get_todos(args):
     return todos
 
 
-@todos.route('/create', methods=['POST'])
+@todos.route('/', methods=['POST'])
 @response(todo_response_schema)
 @body(todo_entry_schema)
 @authenticate(token_auth)
@@ -54,33 +54,57 @@ def create(args):
     return todo
 
 
-@todos.route('/todo_details/<id>', methods=["GET"])
+@todos.route('/details/<id>', methods=["GET"])
+@response(todo_response_schema)
+@authenticate(token_auth)
 def details(id):
-    todo = ToDo.query.filter_by(id=id).first()
-    if todo:
-        return todo_status_schema.dump(todo), 200
-    return {}, 204
+    """Todo details
+
+    This route get the details of the todo associated with an authenticated user. 
+    """
+    current_user = token_auth.current_user()
+    todo = ToDo.query.filter_by(id=id).first_or_404()
+
+    if todo.user_id != current_user.id:
+        abort(401)
+    return todo
 
 
-@todos.route('/update_todo/<id>', methods=['PUT'])
-def update(id):
-    params = {**request.json}
-    todo = ToDo.query.filter_by(id=id).first()
-    try:
-        if todo and todo.is_completed == False:
-            todo_update = todo_update_schema.load(params)
-            todo.update(todo_update)
-            return todo_response_schema.dump(todo), 201
-        elif todo.is_complete == True:
-            return jsonify({"status": "Task completed, cannot be update"}), 200
-    except ValidationError as err:
-        return jsonify({"error": err.messages}), 406
-    return {}, 404
+@todos.route('/update/<int:id>', methods=['PUT'])
+@response(todo_response_schema)
+@other_responses({200: "Task completed, cannot be update"})
+@body(todo_update_schema)
+@authenticate(token_auth)
+def update(args, id):
+    """Update todo
+
+    Authenticated user can update their todo by the id. 
+    """
+    current_user = token_auth.current_user()
+    todo = ToDo.query.filter_by(id=id).first_or_404()
+
+    if todo.user_id != current_user.id:
+        abort(401)
+    if todo and todo.is_completed == False:
+        todo.update(args)
+    elif todo.is_complete == True:
+        return jsonify({"status": "Task completed, cannot be update"}), 200
+    return todo, 201
 
 
-@todos.route('/start/<id>', methods=['PUT'])
+@todos.route('/start/<id>', methods=['GET'])
+@authenticate(token_auth)
 def begin_todo(id):
-    todo = ToDo.query.filter_by(id=id).first()
+    """Start todo
+
+    Authenticated user can start their todo in thei todo list.
+    """
+    current_user = token_auth.current_user()
+    todo = ToDo.query.filter_by(id=id).first_or_404()
+
+    if current_user.id != todo.id:
+        abort(401)
+
     if todo and todo.is_completed == True:
         return jsonify({"status": "Task already completed"}), 200
     elif todo.start_at is not None:
@@ -88,7 +112,7 @@ def begin_todo(id):
     elif todo:
         todo.start()
         return jsonify({'status': 'start'}), 200
-    return {}, 404
+    return {}, 200
 
 
 @todos.route('/complete_todo/<id>', methods=['PUT'])
