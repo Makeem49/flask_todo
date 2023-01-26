@@ -4,7 +4,7 @@ from marshmallow import ValidationError
 from apifairy import body, response, other_responses, authenticate, arguments
 
 # custom import
-from api.models import ToDo, Users
+from api.models import ToDo
 from api.schemas.todos_schema import (TodoEntrySchema,
                                       TodoStatusSchema,
                                       TodoResponseSchema,
