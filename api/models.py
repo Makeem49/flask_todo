@@ -168,6 +168,7 @@ class ToDo(db.Model, CommonAttribute):
     target_time = db.Column(db.Time, nullable=True)
     duration = db.Column(db.Time, nullable=True)
     start_at = db.Column(db.DateTime, nullable=True)
+    suspend_at = db.Column(db.DateTime, nullable=True)
     completed_at = db.Column(db.DateTime, nullable=True)
     is_suspended = db.Column(db.Boolean, nullable=False, default=False)
     is_completed = db.Column(db.Boolean, nullable=True, default=False)
@@ -194,6 +195,8 @@ class ToDo(db.Model, CommonAttribute):
     def suspend(self):
         """Method to suspend a task"""
         self.is_suspended = True
+        self.suspend_at = datetime.utcnow()
+        self.duration = self.suspend_at - self.start_at
 
         db.session.commit()
 
