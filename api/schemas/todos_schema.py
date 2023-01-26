@@ -60,5 +60,6 @@ class TodoArguments(ma.SQLAlchemySchema):
     class Meta:
         order = True
 
-    page = ma.Integer(requored=True)
-    per_page = ma.Integer(requored=True)
+    page = ma.Integer(required=False)
+    per_page = ma.Integer(required=False)
+    search = ma.String(required=False)

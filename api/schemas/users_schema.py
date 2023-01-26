@@ -15,7 +15,7 @@ class UserEntrySchema(ma.SQLAlchemySchema):
     last_name = ma.auto_field(required=True)
     first_name = ma.auto_field(required=True)
     password = ma.String(required=True)
-    email = ma.auto_field(required=True)
+    email = ma.Email(required=True)
 
     @validates("password")
     def validate_password(self, value):
@@ -45,7 +45,7 @@ class UserProfileSchema(ma.SQLAlchemySchema):
     id = ma.auto_field(dump_only=True)
     first_name = ma.auto_field(dump_only=True)
     last_name = ma.auto_field(dump_only=True)
-    email = ma.auto_field(dump_only=True)
+    email = ma.Email(dump_only=True)
     username = ma.auto_field(dump_only=True)
     confirmed = ma.auto_field(dump_only=True)
     active = ma.auto_field(dump_only=True)
@@ -60,7 +60,7 @@ class UpdateUserSchema(ma.SQLAlchemySchema):
 
     first_name = ma.auto_field(required=False)
     last_name = ma.auto_field(required=False)
-    email = ma.auto_field(required=False)
+    email = ma.Email(required=False)
     username = ma.auto_field(required=False)
 
     @validates("username")
