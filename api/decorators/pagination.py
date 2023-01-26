@@ -30,7 +30,7 @@ def paginated_response(collections, max_limit=25):
 
             # call paginate method on the returned query
             p = query_function.paginate(page, per_page, max_per_page=max_limit)
-
+            print(p.total, 'total')
             pages = {
                 'page': page, 'per_page': per_page, 'total': p.total, 'pages': p.pages
             }
