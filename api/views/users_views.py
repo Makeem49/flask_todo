@@ -15,6 +15,7 @@ from api.schemas.users_schema import (UserEntrySchema,
                                       )
 from ..decorators import paginated_response
 from api.auth import token_auth, basic_auth
+from api.decorators.permissions import is_user
 
 users = Blueprint('users', __name__, url_prefix='/api/v1.0/users')
 
@@ -22,7 +23,8 @@ users = Blueprint('users', __name__, url_prefix='/api/v1.0/users')
 user_entry_shema = UserEntrySchema()
 user_response_schema = UserResponseSchema()
 users_response_schema = UserResponseSchema(many=True)
-user_profile_schema = UserProfileSchema()
+my_profile_schema = UserProfileSchema()
+user_profile_schema = UserProfileSchema(exclude=['email', "id"])
 user_args_schema = UserArguments()
 user_update_schema = UpdateUserSchema()
 
@@ -54,9 +56,22 @@ def create_user(args):
     return user
 
 
-@users.route('/<id>', methods=['GET'])
-@response(user_profile_schema)
+@users.route('/me', methods=['GET'])
 @authenticate(token_auth)
+@response(my_profile_schema)
+@is_user
+def me(id):
+    """My Profile
+
+    Get profile of any user using the user id
+    """
+    user = Users.query.filter_by(id=id).first()
+    return user
+
+
+@users.route('/<id>', methods=['GET'])
+@authenticate(token_auth)
+@response(user_profile_schema)
 def profile(id):
     """User Profile
 
@@ -67,9 +82,9 @@ def profile(id):
 
 
 @users.route('/<int:id>', methods=['PUT'])
+@authenticate(token_auth)
 @response(user_profile_schema)
 @body(user_update_schema)
-@authenticate(token_auth)
 def update(args, id):
     """Update user 
 
@@ -86,8 +101,9 @@ def update(args, id):
 
 
 @users.route('/<id>', methods=['DELETE'])
-@response(EmptyResponseSchema)
 @authenticate(token_auth)
+@response(EmptyResponseSchema)
+@is_user
 def delete_account(id):
     """Delete user
 
@@ -100,4 +116,4 @@ def delete_account(id):
 
     db.session.delete(user)
     db.session.commit()
-    return {}, 204
+    return user, 204
